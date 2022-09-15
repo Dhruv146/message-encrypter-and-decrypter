@@ -1,0 +1,210 @@
+/* ***********************************************************************************************************
+
+This is a programme to encrypt and decrypt a given message by the user,
+
+1. The user has to first tell the system whether, the message is to be encrypted or decrypted.
+    N.B If  an encrypted message is not passed first, then no decrypted message output will be provided.
+
+2. Once the message to be encrypted is provided, then further the programme can decrypt it.
+
+3. The encrypted message and the decryption key are stored into 'D' drive with the help of File Handling.
+
+4. Once the user, decides to decrypt the message, the output message is stored in file named 'Dec_message' in the 'C' drive.
+
+THANK YOU !
+
+**************************************************************************************************************/
+#include<stdio.h>
+#include<time.h>
+#include<string.h>
+#include<stdlib.h>
+int encrypt(char Lines[],int k,double enc[2][2],double inv[2][2]);   //Function declaration for Encrypting function
+int decrypt();                                                       //Function declaration for Decrypting function
+int mat_mut(int k, double a[][2], int b[][k],int *c);                //Function declaration for matrix multiplication
+int main()
+{
+    char f,o;
+    int conf;
+    double enc[2][2];
+    char Lines[500];
+    printf("Do you want to Encrypt(1) or Decrypt(2) your message: ");
+    scanf("%d%c",&conf,&o);                                          //%d is for confirmation number 1 or 2 and %c is for Enter that we press after it
+    if(conf==1)
+    {
+    FILE *input;
+    int i,j,l;
+    printf("\nPlease enter message that you want to encrypt : ");    //Takes message that user wants to Encrypt
+    gets(Lines);
+    input = (fopen("D://Input_Message.txt","w+"));                   //Opens file named Input.txt if it is not there, and saves message that user has entered
+        fprintf(input,"%s",Lines);
+        fclose(input);
+        srand(time(0));
+        for (i = 0 ; i < 2; ++i)
+            {
+              for ( j = 0 ; j < 2; ++j)
+              {
+                 enc[i][j] = (double)(rand()%100);                   // This code generates random matrix which is used as encrypting matrix further
+              }
+            printf("\n");
+            }
+        if((enc[0][0] * enc[1][1]) == (enc[0][1] * enc[1][0]))       //If matrix is not invertible, it returns 1 and changes first element
+        {
+           enc[0][0] += rand()%10 + 1;
+        }
+    double det;
+    det = (double)1/((enc[0][0] * enc[1][1]) - (enc[0][1] * enc[1][0]));
+    printf("\n");
+
+    double inv[2][2];                                                //To get invertible of randomly generated matrix
+    {                                                                //We use this invertible matrix elements as decryption key to decrypt Final encoded message
+        inv[0][0] = det * enc[1][1];
+        inv[1][1] = det * enc[0][0];
+        inv[1][0] = det * -1 * enc[1][0];
+        inv[0][1] = det * -1 * enc[0][1];
+    }
+    FILE *dkey;
+    dkey=(fopen("D://Decryption_key.txt","w+"));                     //creates file named Decryption_key.txt to save Decryption key for further decryption process
+    for (i =0 ; i < 2; ++i)
+    {
+        for ( j = 0 ; j < 2; ++j)
+        {
+            fprintf(dkey,"%lf ",inv[i][j]);
+        }
+    }
+    fclose(dkey);
+    int k;
+    {if (strlen(Lines) % 2 == 1)                                    //calculates number of columns to arrange characters of input message in matrix
+    {
+        k = strlen(Lines)/2 + 1;
+    }
+    else{
+        k = strlen(Lines)/2;
+        }}
+            encrypt(Lines,k,enc,inv);                               //Function calling for encryption
+        }
+    else if(conf==2)
+        {
+            decrypt();                                              //If user enters 2 at the beginning Decryption function is evaluated
+        }
+}
+int encrypt(char Lines[],int k,double enc[2][2],double inv[2][2])   //Function definition for Encryption of message
+{
+    int i,j,l;
+    double sum;
+    int st[2][k];                                                   //matrix having k columns to arrange input message characters
+    int y=0;
+    FILE *enc_message;
+    for (i = 0; i < 2; ++i)
+     {
+         for (j = 0; j < k; ++j)
+         {
+             st[i][j] = (int)Lines[y];                              //converts each character of message to respective ASCII value and arranges it in matrix form
+            ++y;
+         }
+     }
+     int ans[2][k];
+     mat_mut(k,enc,st,*ans);                                         //Function calling to multiply character matrix to encrypting matrix
+   enc_message=(fopen("D://Encrypted_message.txt","w+"));           //creates file for saving Encrypted message
+     for (i = 0; i < 2; ++i)
+     {
+         for (j = 0; j < k; ++j)
+         {
+             if(i==1&&j==k-1)
+             {
+                fprintf(enc_message,"%d",ans[i][j]);
+             }
+             else
+                fprintf(enc_message,"%d ",ans[i][j]);
+         }
+     }
+    fclose(enc_message);
+    printf("*****************************************\n");
+    printf("Your message is Encrypted....Successfully\n");
+    printf("*****************************************\n\n");
+}
+
+int decrypt()                                                        //Function definition for Decryption process
+{
+    int i=0,k,f=0,j,l=1,y=0;
+    double sum,inv[2][2];
+    int numb[100];                                                   //creates integer array to store Encrypted numbers from file
+    FILE *enc_message;
+    enc_message = (fopen("D://Encrypted_message.txt","r"));          //opens Encrypted message file to read and store Encrypted numbers in array
+        while(!feof(enc_message))                                    // !feof function returns 1 until its end of file
+        {
+        fscanf(enc_message,"%d",&numb[i]);
+        i++;f++;                                                     //f represents total numbers saved in file
+        }
+        if (f%2 == 1)
+    {
+        k = f/2 + 1;
+    }
+    else{
+        k = f/2;
+        }
+    int st[2][k];
+    FILE *dkey;
+    dkey=(fopen("D://Decryption_key.txt","r"));                     //opens Decryption key file to read decrypting numbers and stores them in decrypting matrix
+    while(!feof(dkey))
+    {
+        for(i=0;i<2;i++)
+        {
+        for(j=0;j<2;j++)
+        {
+        fscanf(dkey,"%lf",&inv[i][j]);
+        }
+        }
+    }
+    fclose(dkey);
+    y=0;
+    for (i = 0; i < 2; ++i)
+     {
+         for (j = 0; j < k; ++j)
+         {
+             st[i][j] = numb[y];                                    //arranges Encrypted numbers in encrypted matrix which is having k number of columns
+             y++;
+         }
+         printf("\n");
+     }
+   int ans[2][k];
+   mat_mut(k,inv,st,*ans);                                           //Function calling to multiply decrypting matrix and Encrypted matrix
+    FILE *dec_message;
+dec_message = (fopen("D://Decrypted_message.txt","w+"));            //creates file to store Final decrypted message
+char alpha;
+int d=0;
+fprintf(dec_message,"Your decrypted message is:\n\n");
+for (i = 0; i < 2; ++i)
+     {
+         for (j = 0; j < k; ++j)
+         {
+             alpha=ans[i][j];                                       //Stores each number from answer matrix which is ASCII value for respective character of message
+             d++;
+             fprintf(dec_message,"%c",alpha);                       //converts ASCII value to specific character and prints it in file
+         }
+     }
+     fclose(dec_message);
+     printf("*****************************************\n");
+    printf("Your message is Decrypted....Successfully\n");
+    printf("*****************************************\n\n");
+}
+int mat_mut(int k, double a[][2], int b[][k],int *c)                //function definition for two matrix multiplication
+{
+    int i,j,l;
+    double sum;
+
+    sum = 0;
+    for (l = 0 ; l < k ; ++l)
+    {
+        for (i = 0 ; i < 2 ; ++i)
+        {
+            sum =  0;
+            for (j = 0 ; j < 2 ; ++j)
+            {
+              sum +=   a[i][j] * b[j][l];
+            }
+            *(c + (i * k) + l) = (int)(sum + 0.5);                  //round offs final numbers and stores them in answer matrix
+        }
+    }
+}
+
+
